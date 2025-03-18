@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block title %}Print Record{% endblock %}
+{% block content %}
+<h2>Printable Record</h2>
+<p><strong>Type:</strong> {{ record.record_type|title }}</p>
+<p><strong>Date:</strong> {{ record.created_at|date:"F j, Y, g:i a" }}</p>
+<p><strong>Text:</strong></p>
+<p>{{ record.text|default:"No text provided" }}</p>
+{% if record.audio %}
+    <p><strong>Audio:</strong> Included (cannot be printed)</p>
+{% endif %}
+{% endblock %}

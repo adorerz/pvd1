@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+{% block title %}Dream Analysis{% endblock %}
+{% block content %}
+<div class="analysis-container">
+    <h2>📖 Sacred Dream/Vision Analysis</h2>
+
+    <h3>✅ 1️⃣ Dream/Vision Summary</h3>
+    <p><strong>Original Dream:</strong></p>
+    <blockquote>{{ record.text }}</blockquote>
+
+    <h3>✅ 2️⃣ Symbolic Analysis</h3>
+    <table class="symbolic-table">
+        <thead>
+            <tr>
+                <th>Symbol</th>
+                <th>Meaning</th>
+                <th>Biblical References</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for symbol, details in analysis.interpretation.items %}
+            <tr>
+                <td>🔹 <strong>{{ symbol|title }}</strong></td>  <!-- ✅ FIXED: Used Django's 'title' filter -->
+                <td>{{ details.meaning }}</td>
+                <td>
+                    {% for ref in details.scripture %}
+                        📖 {{ ref }}<br>
+                    {% endfor %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    <h3>✅ 3️⃣ Spiritual Insights & Themes</h3>
+    <p><strong>Emotional Tone:</strong> {{ analysis.emotional_tone }}</p>
+    <p><strong>Recurring Themes:</strong> {{ analysis.frequent_words }}</p>
+
+    <h3>✅ 4️⃣ Possible Divine Message & Interpretation</h3>
+    <p>📖 <em>God may be revealing insight, renewal, or calling you to deeper faith. The symbols in your dream indicate divine communication.</em></p>
+
+    <h3>✅ 5️⃣ Guidance & Actions Based on Biblical Wisdom</h3>
+    <ul>
+        <li>🙏 <strong>Pray for Revelation:</strong> <em>(James 1:5 – "If any of you lacks wisdom, ask God, who gives generously.")</em></li>
+        <li>🌟 <strong>Trust God's Guidance:</strong> <em>(Psalm 32:8 – "I will instruct you and teach you in the way you should go.")</em></li>
+        <li>🌊 <strong>Embrace Renewal & Cleansing:</strong> <em>(2 Corinthians 5:17 – "If anyone is in Christ, the new creation has come!")</em></li>
+        <li>🦁 <strong>Walk in Boldness & Faith:</strong> <em>(Joshua 1:9 – "Be strong and courageous! Do not be afraid; God is with you.")</em></li>
+    </ul>
+
+    <a href="{% url 'dashboard' %}" class="btn">Back to Dashboard</a>
+</div>
+
+<style>
+.analysis-container {
+    max-width: 900px;
+    margin: auto;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+h2, h3 {
+    color: #343a40;
+}
+blockquote {
+    background: #fff3cd;
+    padding: 10px;
+    border-left: 5px solid #ffa000;
+}
+
+/* Symbolic Analysis Table */
+.symbolic-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    background: white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+.symbolic-table th, .symbolic-table td {
+    border: 1px solid #ddd;
+    padding: 10px;
+    text-align: left;
+}
+.symbolic-table th {
+    background: #343a40;
+    color: white;
+}
+.symbolic-table tr:nth-child(even) {
+    background: #f2f2f2;
+}
+</style>
+{% endblock %}

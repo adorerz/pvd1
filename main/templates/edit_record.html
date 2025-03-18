@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block title %}Edit Record{% endblock %}
+{% block content %}
+<div class="form-container">
+    <h2>Edit Record</h2>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <label for="record_type">Record Type:</label>
+        {{ form.record_type }}
+
+        <label for="text">Text:</label>
+        {{ form.text }}
+
+        <!-- "Share with Community" Checkbox -->
+        <label class="share-with-community">
+            <input type="checkbox" name="is_shared" {% if form.instance.is_shared %}checked{% endif %}>
+            Share with Community
+        </label>
+
+        <button type="submit">Save Changes</button>
+    </form>
+</div>
+{% endblock %}

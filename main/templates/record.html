@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+{% block title %}Record - Spiritual App{% endblock %}
+{% block content %}
+<h2>Record a Dream, Vision, or Prophecy</h2>
+<div class="form-container">
+    <!-- Left Column: Text Input Form -->
+    <div class="left-column">
+        <form method="post" enctype="multipart/form-data" id="text-form">
+            {% csrf_token %}
+            <label for="record_type"><i class="fas fa-list-alt"></i> Select Type:</label>
+            {{ text_form.record_type }}
+
+            <label for="text"><i class="fas fa-align-left"></i> Enter Text:</label>
+            {{ text_form.text }}
+
+            <button type="submit" class="btn btn-save">Save Text</button>
+        </form>
+    </div>
+
+    <!-- Right Column: Rainbow Moving Clouds Animation -->
+    <div class="right-column">
+        <h3><i class="fas fa-cloud"></i></h3>
+        <canvas id="rainbow-clouds" class="canvas-placeholder"></canvas>
+        <script>
+            const canvas = document.getElementById('rainbow-clouds');
+            const ctx = canvas.getContext('2d');
+            canvas.width = 400;
+            canvas.height = 300;
+
+            let clouds = [];
+            const colors = ['#ff0000', '#ff7f00', '#ffff00', '#00ff00', '#0000ff', '#4b0082', '#9400d3'];
+
+            function createClouds() {
+                for (let i = 0; i < 7; i++) {
+                    clouds.push({
+                        x: Math.random() * canvas.width,
+                        y: Math.random() * canvas.height,
+                        size: Math.random() * 50 + 50,
+                        speed: Math.random() * 2 + 1,
+                        color: colors[i % colors.length]
+                    });
+                }
+            }
+
+            function drawClouds() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                clouds.forEach(cloud => {
+                    ctx.beginPath();
+                    ctx.arc(cloud.x, cloud.y, cloud.size, 0, Math.PI * 2);
+                    ctx.fillStyle = cloud.color;
+                    ctx.globalAlpha = 0.5;
+                    ctx.fill();
+                    ctx.globalAlpha = 1;
+                });
+            }
+
+            function moveClouds() {
+                clouds.forEach(cloud => {
+                    cloud.x += cloud.speed;
+                    if (cloud.x - cloud.size > canvas.width) {
+                        cloud.x = -cloud.size;
+                        cloud.y = Math.random() * canvas.height;
+                        cloud.size = Math.random() * 50 + 50;
+                        cloud.speed = Math.random() * 2 + 1;
+                    }
+                });
+            }
+
+            function animate() {
+                drawClouds();
+                moveClouds();
+                requestAnimationFrame(animate);
+            }
+
+            createClouds();
+            animate();
+        </script>
+    </div>
+</div>
+{% endblock %}

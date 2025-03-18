@@ -1,0 +1,391 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<!-- ============================== FILTER PANEL ============================== -->
+<div class="filter-panel">
+    <h2>🔎 Filter</h2>
+    <form method="get" action="{% url 'community' %}">
+        <!-- Filter by date -->
+        <div class="filter-group">
+            <label for="date">Date (Month & Year)</label>
+            <select name="date" id="date" class="form-control">
+                <option value="">All Dates</option>
+                {% for date in dates %}
+                    <option value="{{ date }}">{{ date|date:"Y-m" }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Filter by user -->
+        <div class="filter-group">
+            <label for="user">User</label>
+            <select name="user" id="user" class="form-control">
+                <option value="">All Users</option>
+                {% for person in users %}
+                    <option value="{{ person.id }}">{{ person.first_name }} {{ person.last_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Filter by religion -->
+        <div class="filter-group">
+            <label for="religion">Religion</label>
+            <select name="religion" id="religion" class="form-control">
+                <option value="">All Religions</option>
+                {% for religion in religions %}
+                    <option value="{{ religion }}">{{ religion }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block">Apply Filters</button>
+    </form>
+</div>
+
+<!-- ============================== MAIN CONTENT ============================== -->
+<div class="community-container">
+    <!-- Top Bar -->
+    <div class="community-topbar">
+        <h1>Prophecies, Visions & Dreams Community</h1>
+        <button class="btn btn-share" onclick="window.location.href='{% url 'record' %}'">
+            + Share a New Dream
+        </button>
+    </div>
+
+    <!-- Community Metrics -->
+    <div class="metrics-bar">
+        <div class="metric-box">
+            <p>Total Community Posts:</p>
+            <span>{{ total_community_posts }}</span>
+        </div>
+        <div class="metric-box">
+            <p>Shared Records:</p>
+            <span>{{ total_shared_records }}</span>
+        </div>
+        <div class="metric-box">
+            <p>Total Users:</p>
+            <span>{{ total_users }}</span>
+        </div>
+    </div>
+
+    <!-- =========================== COMMUNITY POSTS =========================== -->
+    <h2>📝 Community Posts</h2>
+    <div class="cards-container">
+        {% for post in community_posts %}
+        <div class="card">
+            <div class="card-header">
+                <span class="card-author">👤 {{ post.user.first_name }} {{ post.user.last_name }}</span>
+                <span class="card-date">📅 {{ post.created_at|date:"M d, Y" }}</span>
+            </div>
+            <div class="card-content">
+                <h3 class="card-title">{{ post.title }}</h3>
+                <p>{{ post.content }}</p>
+            </div>
+            <div class="card-footer">
+                <p class="likes-count">👍 <span id="post-likes-{{ post.id }}">{{ post.likes }}</span></p>
+                <button class="btn btn-outline-primary btn-like-post"
+                        data-post-url="{% url 'like_community_post' post.id %}">
+                    👍 Like
+                </button>
+                <button class="btn btn-outline-primary"
+                        onclick="toggleCommentSection('post', {{ post.id }})">
+                    💬 Comments
+                </button>
+            </div>
+
+            <!-- Collapsible Comments Section -->
+            <div id="comment-section-post-{{ post.id }}" class="comment-section hidden">
+                <h4>Comments</h4>
+                <div class="comment-list">
+                    {% for comment in post.comments.all %}
+                    <div class="comment">
+                        <strong>{{ comment.user.first_name }} {{ comment.user.last_name }}:</strong>
+                        <p>{{ comment.content }}</p>
+                        <small>{{ comment.created_at|date:"M d, Y H:i" }}</small>
+                    </div>
+                    {% empty %}
+                    <p>No comments yet.</p>
+                    {% endfor %}
+                </div>
+                <!-- New Comment Form -->
+                <form class="comment-form-post" data-post-id="{{ post.id }}">
+                    {% csrf_token %}
+                    <textarea name="comment"
+                              rows="3"
+                              placeholder="Write your comment"
+                              class="form-control"></textarea>
+                    <button type="submit" class="btn btn-primary mt-2">Submit Comment</button>
+                </form>
+            </div>
+        </div>
+        {% empty %}
+        <p>No posts found.</p>
+        {% endfor %}
+    </div>
+
+    <!-- ================== SHARED DREAMS/VISIONS/PROPHECIES ================== -->
+    <h2>🌌 Shared Dreams & Visions</h2>
+    <div class="cards-container">
+        {% for record in shared_records %}
+        <div class="card">
+            <div class="card-header">
+                <span class="card-author">👤 {{ record.user.first_name }} {{ record.user.last_name }}</span>
+                <span class="card-date">📅 {{ record.created_at|date:"M d, Y" }}</span>
+            </div>
+            <div class="card-content">
+                <h3 class="record-type">{{ record.record_type|title }}</h3>
+                <p>{{ record.text }}</p>
+                {% if record.audio %}
+                <audio controls>
+                    <source src="{{ record.audio.url }}" type="audio/wav">
+                    Your browser does not support the audio element.
+                </audio>
+                {% endif %}
+            </div>
+            <div class="card-footer">
+                <p class="likes-count">👍 <span id="record-likes-{{ record.id }}">{{ record.likes }}</span></p>
+                <button class="btn btn-outline-primary btn-like-record"
+                        data-record-url="{% url 'like_record' record.id %}">
+                    👍 Like
+                </button>
+                <button class="btn btn-outline-success"
+                        id="interpret-button-{{ record.id }}"
+                        onclick="toggleInterpretation({{ record.id }}, '{{ record.text|escapejs }}')">
+                    🔮 Interpret
+                </button>
+                <button class="btn btn-outline-primary"
+                        onclick="toggleCommentSection('record', {{ record.id }})">
+                    💬 Comments
+                </button>
+            </div>
+
+            <!-- Interpretation Section (collapsible) -->
+            <div id="interpretation-section-{{ record.id }}" class="interpretation-section hidden">
+                <h4>Collaborative Interpretations</h4>
+                <div class="interpretation-list" id="interpretation-list-{{ record.id }}">
+                    {% for interp in record.interpretations.all %}
+                    <div class="interpretation">
+                        <strong>{{ interp.user.first_name }}:</strong> {{ interp.content }}
+                        <span class="interpretation-date">📅 {{ interp.created_at|date:"M d, Y H:i" }}</span>
+                    </div>
+                    {% empty %}
+                    <p>No interpretations yet. Share your insights!</p>
+                    {% endfor %}
+                </div>
+                <form class="interpretation-form" data-record-id="{{ record.id }}">
+                    {% csrf_token %}
+                    <textarea name="interpretation"
+                              rows="3"
+                              placeholder="Share an interpretation..."
+                              class="form-control"></textarea>
+                    <button type="submit" class="btn btn-primary mt-2">Post Interpretation</button>
+                </form>
+            </div>
+
+            <!-- Comments Section (collapsible) -->
+            <div id="comment-section-record-{{ record.id }}" class="comment-section hidden">
+                <h4>Comments</h4>
+                <div class="comment-list">
+                    {% for cmt in record.comments.all %}
+                    <div class="comment">
+                        <strong>{{ cmt.user.first_name }} {{ cmt.user.last_name }}:</strong>
+                        <p>{{ cmt.content }}</p>
+                        <small>{{ cmt.created_at|date:"M d, Y H:i" }}</small>
+                    </div>
+                    {% empty %}
+                    <p>No comments yet.</p>
+                    {% endfor %}
+                </div>
+                <form class="comment-form-record" data-record-id="{{ record.id }}">
+                    {% csrf_token %}
+                    <textarea name="comment"
+                              rows="3"
+                              placeholder="Write your comment"
+                              class="form-control"></textarea>
+                    <button type="submit" class="btn btn-primary mt-2">Submit Comment</button>
+                </form>
+            </div>
+        </div>
+        {% empty %}
+        <p>No shared dreams or visions at this time.</p>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- ============================== SCRIPTS ============================== -->
+<script>
+// Toggle comment sections
+function toggleCommentSection(type, id) {
+    const section = document.getElementById(`comment-section-${type}-${id}`);
+    section.classList.toggle("hidden");
+}
+
+// Toggle interpretation sections
+function toggleInterpretation(id, content) {
+    const section = document.getElementById(`interpretation-section-${id}`);
+    const button = document.getElementById(`interpret-button-${id}`);
+    section.classList.toggle("hidden");
+    button.textContent = section.classList.contains("hidden")
+        ? "🔮 Interpret"
+        : "Close";
+}
+
+// Helper to retrieve CSRF token from cookies
+function getCSRFToken() {
+    const cookieValue = document.cookie.match(/csrftoken=([^;]+)/);
+    return cookieValue ? cookieValue[1] : '';
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+
+    // LIKE a CommunityPost
+    document.querySelectorAll('.btn-like-post').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const url = this.getAttribute('data-post-url');
+            fetch(url, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': getCSRFToken() }
+            })
+            .then(resp => resp.json())
+            .then(data => {
+                if (data.success) {
+                    const match = url.match(/(\d+)\/$/);
+                    const postId = match ? match[1] : null;
+                    if (postId) {
+                        document.getElementById(`post-likes-${postId}`).textContent = data.likes;
+                    }
+                } else {
+                    alert(data.error || 'Error updating like count.');
+                }
+            })
+            .catch(err => console.error('Error liking post:', err));
+        });
+    });
+
+    // LIKE a SpiritualRecord
+    document.querySelectorAll('.btn-like-record').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const url = this.getAttribute('data-record-url');
+            fetch(url, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': getCSRFToken() }
+            })
+            .then(resp => resp.json())
+            .then(data => {
+                if (data.success) {
+                    const match = url.match(/(\d+)\/$/);
+                    const recordId = match ? match[1] : null;
+                    if (recordId) {
+                        document.getElementById(`record-likes-${recordId}`).textContent = data.likes;
+                    }
+                } else {
+                    alert(data.error || 'Error updating record like count.');
+                }
+            })
+            .catch(err => console.error('Error liking record:', err));
+        });
+    });
+
+    // Comment on a CommunityPost
+    document.querySelectorAll('.comment-form-post').forEach(form => {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const postId = this.getAttribute('data-post-id');
+            const url = "{% url 'post_community_comment' post_id=0 %}".replace('0', postId);
+            const formData = new FormData(this);
+
+            fetch(url, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': getCSRFToken() },
+                body: formData
+            })
+            .then(resp => resp.json())
+            .then(data => {
+                if (data.success) {
+                    const commentSection = document.getElementById(`comment-section-post-${postId}`);
+                    const commentList = commentSection.querySelector('.comment-list');
+                    commentList.innerHTML += `
+                        <div class="comment">
+                            <strong>${data.username}:</strong>
+                            <p>${data.content}</p>
+                            <small>${data.date}</small>
+                        </div>
+                    `;
+                    this.reset();
+                } else {
+                    alert(data.error || 'Error posting comment.');
+                }
+            })
+            .catch(err => console.error('Error posting comment:', err));
+        });
+    });
+
+    // Comment on a SpiritualRecord
+    document.querySelectorAll('.comment-form-record').forEach(form => {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const recordId = this.getAttribute('data-record-id');
+            const url = "{% url 'post_record_comment' record_id=0 %}".replace('0', recordId);
+            const formData = new FormData(this);
+
+            fetch(url, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': getCSRFToken() },
+                body: formData
+            })
+            .then(resp => resp.json())
+            .then(data => {
+                if (data.success) {
+                    const commentSection = document.getElementById(`comment-section-record-${recordId}`);
+                    const commentList = commentSection.querySelector('.comment-list');
+                    commentList.innerHTML += `
+                        <div class="comment">
+                            <strong>${data.username}:</strong>
+                            <p>${data.content}</p>
+                            <small>${data.date}</small>
+                        </div>
+                    `;
+                    this.reset();
+                } else {
+                    alert(data.error || 'Error posting comment.');
+                }
+            })
+            .catch(err => console.error('Error posting comment:', err));
+        });
+    });
+
+    // Interpretation on a SpiritualRecord
+    document.querySelectorAll('.interpretation-form').forEach(form => {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const recordId = this.getAttribute('data-record-id');
+            const url = "{% url 'post_record_interpretation' record_id=0 %}".replace('0', recordId);
+            const formData = new FormData(this);
+
+            fetch(url, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': getCSRFToken() },
+                body: formData
+            })
+            .then(resp => resp.json())
+            .then(data => {
+                if (data.success) {
+                    const interpList = document.getElementById(`interpretation-list-${recordId}`);
+                    interpList.innerHTML += `
+                        <div class="interpretation">
+                            <strong>${data.username}:</strong> ${data.content}
+                            <span class="interpretation-date">📅 ${data.date}</span>
+                        </div>
+                    `;
+                    this.reset();
+                } else {
+                    alert(data.error || 'Error posting interpretation.');
+                }
+            })
+            .catch(err => console.error('Error posting interpretation:', err));
+        });
+    });
+});
+</script>
+{% endblock %}

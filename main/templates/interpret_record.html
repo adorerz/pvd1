@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+{% block title %}Dream Interpretation{% endblock %}
+{% block content %}
+<div class="interpretation-container">
+    <h2>📖 Dream/Vision Interpretation</h2>
+
+    <h3>🌟 Dream Summary:</h3>
+    <blockquote>{{ record.text }}</blockquote>
+
+    <h3>🔍 Symbolic Interpretation:</h3>
+    <table class="interpretation-table">
+        <thead>
+            <tr>
+                <th>Symbol</th>
+                <th>Meaning</th>
+                <th>Biblical References</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in interpretation %}
+            <tr>
+                <td>🔹 <strong>{{ item.symbol }}</strong></td>
+                <td>{{ item.meaning }}</td>
+                <td>
+                    {% for ref in item.scripture %}
+                        📖 {{ ref }}<br>
+                    {% endfor %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h3>🙏 Guidance & Actions:</h3>
+    <ul>
+        <li>📖 **Pray for clarity** (*James 1:5 – "If any of you lacks wisdom, ask God, who gives generously."*)</li>
+        <li>🌟 **Trust God's guidance** (*Psalm 32:8 – "I will instruct you and teach you in the way you should go."*)</li>
+        <li>🌊 **Embrace renewal** (*2 Corinthians 5:17 – "If anyone is in Christ, the new creation has come!"*)</li>
+        <li>🦁 **Walk in boldness** (*Joshua 1:9 – "Be strong and courageous! Do not be afraid; God is with you."*)</li>
+    </ul>
+
+    <a href="{% url 'dashboard' %}" class="btn">Back to Dashboard</a>
+</div>
+
+<style>
+.interpretation-container {
+    max-width: 900px;
+    margin: auto;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+h2, h3 {
+    color: #343a40;
+}
+blockquote {
+    background: #fff3cd;
+    padding: 10px;
+    border-left: 5px solid #ffa000;
+}
+
+/* Styling for the Interpretation Table */
+.interpretation-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    background: white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+.interpretation-table th, .interpretation-table td {
+    border: 1px solid #ddd;
+    padding: 10px;
+    text-align: left;
+}
+.interpretation-table th {
+    background: #343a40;
+    color: white;
+}
+.interpretation-table tr:nth-child(even) {
+    background: #f2f2f2;
+}
+</style>
+{% endblock %}

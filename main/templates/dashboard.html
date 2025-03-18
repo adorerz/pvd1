@@ -1,0 +1,154 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard - Spiritual App{% endblock %}
+{% block content %}
+<h2>Dashboard</h2>
+<p>Welcome, {{ user.first_name }} {{ user.last_name }}!</p>
+
+<!-- Tool Pane -->
+<div class="tool-pane">
+    <!-- Record Button -->
+    <a href="{% url 'record' %}" class="btn-tool">Record a New Dream, Vision, or Prophecy</a>
+
+    <!-- Filters -->
+    <div class="filters-container">
+        <!-- Date Filter -->
+        <div class="filter-group">
+            <label for="filter-date">Date:</label>
+            <input type="date" name="filter_date" id="filter-date">
+        </div>
+
+        <!-- Record Type Filter -->
+        <div class="filter-group">
+            <label for="filter-type">Record Type:</label>
+            <select name="filter_type" id="filter-type">
+                <option value="">All</option>
+                <option value="dream">Dream</option>
+                <option value="vision">Vision</option>
+                <option value="prophecy">Prophecy</option>
+                <option value="audio">Recorded Audio</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Apply Filters Button -->
+    <button type="submit" class="btn-tool">Apply Filters</button>
+</div>
+
+<!-- Main Dashboard -->
+<div class="dashboard-container">
+    <div class="records-container">
+        <h3>Your Records</h3>
+        {% if records %}
+        <table class="records-table">
+            <thead>
+                <tr>
+                    <th style="width: 70%;">Content</th>
+                    <th style="width: 30%;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for record in records %}
+                    <tr class="{% cycle 'row-light' 'row-dark' %}">
+                        <td>
+                            <strong>{{ record.record_type|title }}:</strong>
+                            <p>{{ record.text|default:"No text provided" }}</p>
+                            {% if record.audio %}
+                                <p>
+                                    <audio controls>
+                                        <source src="{{ record.audio.url }}" type="audio/wav">
+                                        Your browser does not support the audio element.
+                                    </audio>
+                                </p>
+                            {% else %}
+                                <p><em>No audio recorded</em></p>
+                            {% endif %}
+                            <p class="record-date">Recorded on: {{ record.created_at|date:"F j, Y, g:i a" }}</p>
+                        </td>
+                        <td class="actions-column">
+                            <a href="{% url 'edit_record' record.id %}" class="btn-action">Edit</a>
+                            <a href="{% url 'delete_record' record.id %}" class="btn-action btn-delete" onclick="return confirmDelete(event, this);">Delete</a>
+                            <a href="{% url 'print_record' record.id %}" class="btn-action">Print</a>
+                            <a href="{% url 'analyze_record' record.id %}" class="btn-action">Analyze</a>
+                            <a href="{% url 'interpret_record' record.id %}" class="btn-action">Interpret</a>
+                            <button onclick="playText('{{ record.text|escapejs }}')" class="btn-action">Play</button>
+                            <label class="share-with-community">
+                                <input type="checkbox" 
+                                       data-record-id="{{ record.id }}" 
+                                       {% if record.is_shared %}checked{% endif %}
+                                       onchange="toggleCommunitySharing(this)">
+                                Share with Community
+                            </label>
+                        </td>                        
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+            <!-- Pagination -->
+        <div class="pagination">
+            {% if records.has_previous %}
+                <a href="?page={{ records.previous_page_number }}" class="btn-pagination">Previous</a>
+            {% endif %}
+            <span>Page {{ records.number }} of {{ records.paginator.num_pages }}</span>
+            {% if records.has_next %}
+                <a href="?page={{ records.next_page_number }}" class="btn-pagination">Next</a>
+            {% endif %}
+        </div>
+        {% else %}
+            <p>You have not recorded any dreams, visions, or prophecies yet. Start by <a href="{% url 'record' %}">recording one</a>.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+<script>
+    // Function to read the text content using SpeechSynthesis API
+    function playText(text) {
+        const speech = new SpeechSynthesisUtterance(text);
+        speech.lang = 'en-US'; // Set the language
+        window.speechSynthesis.speak(speech);
+    }
+
+    // Function to toggle community sharing
+    function toggleCommunitySharing(checkbox) {
+        const recordId = checkbox.dataset.recordId;
+        const isShared = checkbox.checked;
+
+        fetch(`/toggle-community-sharing/${recordId}/`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": getCSRFToken(),  // Django CSRF Token
+            },
+            body: JSON.stringify({ is_shared: isShared }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status !== "success") {
+                alert("Error updating sharing status. Please try again.");
+                checkbox.checked = !isShared;  // Revert checkbox if an error occurs
+            }
+        })
+        .catch(error => {
+            console.error("Error:", error);
+            alert("Error updating sharing status.");
+            checkbox.checked = !isShared;  // Revert checkbox if an error occurs
+        });
+    }
+
+    // Function to confirm deletion
+    function confirmDelete(event, element) {
+        const confirmed = confirm("Are you sure you want to delete this content?");
+        if (!confirmed) {
+            event.preventDefault();
+            return false;
+        }
+        return true;
+    }
+
+    // Function to retrieve CSRF token from the cookie
+    function getCSRFToken() {
+        const cookieValue = document.cookie.match(/csrftoken=([^ ;]+)/);
+        return cookieValue ? cookieValue[1] : "";
+    }
+</script>
